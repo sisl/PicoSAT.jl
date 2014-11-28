@@ -48,5 +48,10 @@ end
 
 # c1 iterables
 @test PicoSAT.solve(tuple(clauses1...)) == [1, -2, -3, -4, 5]
-gen_clauses1() = begin
+
+test_gen() = begin
+    return (@task for c in clauses1
+        produce(c)
+    end)
 end
+@test PicoSAT.solve(test_gen()) == [1,-2,-3,-4,5]
