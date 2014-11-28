@@ -1,6 +1,6 @@
 module PicoSAT
 
-export solve
+export solve, satisfiable
 
 @unix_only begin
     const libpicosat = Pkg.dir("PicoSAT", "deps", "libpicosat.so")
@@ -185,7 +185,7 @@ type PicoSolIterator
     PicoSolIterator(p::PicoPtr) = begin
         @assert !isnull(p)
         iter = new(p)
-        finializer(iter, i -> picosat_reset(i.ptr))
+        finalizer(iter, i -> picosat_reset(i.ptr))
         return iter
     end
 end
@@ -232,15 +232,17 @@ next_solution(p::PicoPtr) = begin
     return result
 end
 
-Base.start(it::PicoSolIterator) = next_solution(it.ptr)
+satisfiable(sol) = sol !== :unknown && sol !== :unsatisfiable
 
-Base.done(it::PicoSolIterator, state) = begin
-    state == :unknown || state == :unsatisfiable
+Base.start(it::PicoSolIterator) = begin
+    sol = next_solution(it.ptr)
+    (sol, satisfiable(sol))
 end
+Base.done(it::PicoSolIterator, state) = state[2] == false
 
 Base.next(it::PicoSolIterator, state) = begin
     sol = next_solution(it.ptr)
-    return (sol, sol)
+    (state[1], (sol, satisfiable(sol)))
 end
 
 end # module
