@@ -21,10 +21,6 @@ nvars3, clauses3 = 2, Any[[-1, 2], [-1, -2], [1, -2]]
 
 #### solve tests ####
 
-# constructor tests
-#@test_throws MethodError PicoSAT.solve(1)
-@test_throws MethodError PicoSAT.solve([1, 1, Nothing])
-
 # no clause
 for n = 0:10
     res = PicoSAT.solve([], vars=n)
