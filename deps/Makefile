@@ -8,9 +8,7 @@ picosat.o: picosat.c picosat.h
 
 libpicosat.a: picosat.o
 	ar rc $@ picosat.o
-	#ranlib $@
 
-#SONAME=-Xlinker -soname -Xlinker libpicosat.so
 libpicosat.so: picosat.o
 	$(CC) $(CFLAGS) -shared -o $@ picosat.o #$(SONAME)
 
