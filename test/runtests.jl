@@ -109,3 +109,7 @@ end
 @test collect(PicoSAT.itersolve(clauses1, proplimit=2)) == []
 @test collect(PicoSAT.itersolve(clauses2,vars=nvars2)) == []
 @test collect(PicoSAT.itersolve(clauses3, vars=3)) == Any[[-1, -2, -3], [-1, -2, 3]]
+
+# Test that we can run the examples
+read, write = redirect_stdout()
+include("../examples/pkg.jl")
