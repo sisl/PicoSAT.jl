@@ -7,6 +7,10 @@ end
     error("PicoSAT.jl does not currently work on Windows")
 end
 
+const UNKNOWN = 0
+const SATISFIABLE = 10
+const UNSATISFIABLE = 20
+
 immutable PicoPtr
     ptr::Ptr{Void}
 end
@@ -70,12 +74,12 @@ picosat_set_propagation_limit(p::PicoPtr, limit::Integer) =
 # assignment.   The return value is the original clause index to which
 # this literal respectively the trailing zero belong starting at 0.
 
-picosat_add(p::PicoPtr, lit::Cint) =
+picosat_add(p::PicoPtr, lit::Integer) =
     ccall((:picosat_add, libpicosat), Cint, (PicoPtr,Cint), p, lit)
 
 # Call the main SAT solver.
 # A negative decision limit sets no limit on the number of decisions.
-picosat_sat(p::PicoPtr, limit::Int) =
+picosat_sat(p::PicoPtr, limit::Integer) =
     ccall((:picosat_sat, libpicosat), Cint, (PicoPtr,Cint), p, limit)
 
 # p cnf <m> n
@@ -87,8 +91,8 @@ picosat_variables(p::PicoPtr) =
 # The value of the literal is return as '1' for 'true',  '-1' for 'false'
 # and '0' for an unknown value.
 
-picosat_deref(p::PicoPtr) =
-    ccall((:picosat_deref, libpicosat), Cint, (PicoPtr,), p)
+picosat_deref(p::PicoPtr, lit::Integer) =
+    ccall((:picosat_deref, libpicosat), Cint, (PicoPtr,Cint), p, lit)
 
 add_clause(p::PicoPtr, clause) = begin
     for lit in clause
@@ -102,7 +106,7 @@ end
 
 add_clauses(p::PicoPtr, clauses) = begin
     for item in clauses
-        add_clauses(p, item)
+        add_clause(p, item)
     end
     return
 end
@@ -139,42 +143,29 @@ end
 
 get_solution(p::PicoPtr) = begin
     nvar = picosat_variables(p)
-    if nvar <= 0
+    if nvar < 0
         picosat_reset(p)
-        throw(ErrorException("number of solution variables ≤ 0"))
+        throw(ErrorException("number of solution variables < 0"))
     end
     sol = zeros(Int, nvar)
     for i = 1:nvar
-        v = picosat_dref(p, i)
+        v = picosat_deref(p, i)
         assert(v == 1 || v == -1)
-        sol[i] = v
+        sol[i] = v * i
     end
     return sol
-end
-
-abstract SATResult
-
-immutable Uknown <: SATResult
-end
-
-immutable Unsatisfiable <: SATResult
-end
-
-immutable Satisfiable <: SATResult
-    result::Vector{Int}
 end
 
 # Solve the SAT problem for provided clauses
 solve(clauses; vars=-1, verbose=0, proplimit=0) = begin
     p = picosat_setup(clauses, vars, verbose, proplimit)
     res = picosat_sat(p, -1)
-    local result::SATResult
-    if res == PICOSAT_SATISFIABLE
-        result = Satisfiable(get_solution(p))
-    elseif res == PICOSAT_UNSATISFIABLE
-        result = Unsatisfiable()
-    elseif res == PICOSAT_UKNOWN
-        result = Unknown()
+    if res == SATISFIABLE
+        result = get_solution(p)
+    elseif res == UNSATISFIABLE
+        result = :unsatisfiable
+    elseif res == UNKNOWN
+        result = :unknown
     else
         picosat_reset(p)
         throw(ErrorException("PicoSAT Errror: return value $res"))
