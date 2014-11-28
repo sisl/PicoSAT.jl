@@ -159,7 +159,10 @@ get_solution(p::PicoPtr) = begin
 end
 
 # Solve the SAT problem for provided clauses
-solve(clauses; vars=-1, verbose=0, proplimit=0) = begin
+function solve(clauses;
+               vars::Integer=-1,
+               verbose::Integer=0,
+               proplimit::Integer=0)
     p = picosat_setup(clauses, vars, verbose, proplimit)
     res = picosat_sat(p, -1)
     if res == SATISFIABLE
@@ -174,6 +177,70 @@ solve(clauses; vars=-1, verbose=0, proplimit=0) = begin
     end
     picosat_reset(p)
     return result
+end
+
+type PicoSolIterator
+    ptr::PicoPtr
+
+    PicoSolIterator(p::PicoPtr) = begin
+        @assert !isnull(p)
+        iter = new(p)
+        finializer(iter, i -> picosat_reset(i.ptr))
+        return iter
+    end
+end
+
+function itersolve(clauses;
+                   vars::Integer=-1,
+                   verbose::Integer=0,
+                   proplimit::Integer=0)
+    p = picosat_setup(clauses, vars, verbose, proplimit)
+    return PicoSolIterator(p)
+end
+
+# Add inverse of current solution to the clauses
+blocksol(p::PicoPtr) = begin
+    nvar = picosat_variables(p)
+    if nvar < 0
+        picosat_reset(p)
+        throw(ErrorException("number of solution variables < 0"))
+    end
+    sol = zeros(Int, nvar)
+    for i = 1:nvar
+        sol[i] = picosat_deref(p, i) > 0 ? 1 : -1
+    end
+    for i = 1:nvar
+        picosat_add(p, sol[i] < 0 ? i : -i)
+    end
+    picosat_add(p, 0)
+    return
+end
+
+next_solution(p::PicoPtr) = begin
+    res = picosat_sat(p, -1)
+    if res == SATISFIABLE
+        result = get_solution(p)
+        # add inverse sol for next iter
+        blocksol(p)
+    elseif res == UNSATISFIABLE
+        result = :unsatisfiable
+    elseif res == UNKNOWN
+        result = :unknown
+    else
+        throw(ErrorException("PicoSAT Errror: return value $res"))
+    end
+    return result
+end
+
+Base.start(it::PicoSolIterator) = next_solution(it.ptr)
+
+Base.done(it::PicoSolIterator, state) = begin
+    state == :unknown || state == :unsatisfiable
+end
+
+Base.next(it::PicoSolIterator, state) = begin
+    sol = next_solution(it.ptr)
+    return (sol, sol)
 end
 
 end # module
