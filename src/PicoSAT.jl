@@ -96,7 +96,7 @@ picosat_variables(p::PicoPtr) =
 picosat_deref(p::PicoPtr, lit::Integer) =
     ccall((:picosat_deref, libpicosat), Cint, (PicoPtr,Cint), p, lit)
 
-add_clause(p::PicoPtr, clause) = begin
+function add_clause(p::PicoPtr, clause)
     for lit in clause
         v = convert(Cint, lit)
         v == 0 && throw(ErrorException("non zero integer expected"))
@@ -106,14 +106,14 @@ add_clause(p::PicoPtr, clause) = begin
     return
 end
 
-add_clauses(p::PicoPtr, clauses) = begin
+function add_clauses(p::PicoPtr, clauses)
     for item in clauses
         add_clause(p, item)
     end
     return
 end
 
-picosat_setup(clauses, vars::Integer, verbose::Integer, proplimit::Integer) = begin
+function picosat_setup(clauses, vars::Integer, verbose::Integer, proplimit::Integer)
     p = picosat_init()
     if isnull(p)
         picosat_reset(p)
@@ -143,7 +143,7 @@ picosat_setup(clauses, vars::Integer, verbose::Integer, proplimit::Integer) = be
     return p
 end
 
-get_solution(p::PicoPtr) = begin
+function get_solution(p::PicoPtr)
     nvar = picosat_variables(p)
     if nvar < 0
         picosat_reset(p)
@@ -200,7 +200,7 @@ function itersolve(clauses;
 end
 
 # Add inverse of current solution to the clauses
-blocksol(it::PicoSolIterator) = begin
+function blocksol(it::PicoSolIterator)
     nvar = picosat_variables(it.ptr)
     if nvar < 0
         throw(ErrorException("number of solution variables < 0"))
@@ -218,7 +218,7 @@ blocksol(it::PicoSolIterator) = begin
     return
 end
 
-next_solution(it::PicoSolIterator) = begin
+function next_solution(it::PicoSolIterator)
     res = picosat_sat(it.ptr, -1)
     if res == SATISFIABLE
         result = get_solution(it.ptr)
