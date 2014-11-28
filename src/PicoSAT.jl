@@ -1,5 +1,7 @@
 module PicoSAT
 
+export solve
+
 @unix_only begin
     const libpicosat = Pkg.dir("PicoSAT", "deps", "libpicosat.so")
 end
