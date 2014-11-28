@@ -19,6 +19,8 @@ nvars2, clauses2 = 2, Any[[-1], [1]]
 # 1 -2 0
 nvars3, clauses3 = 2, Any[[-1, 2], [-1, -2], [1, -2]]
 
+#### solve tests ####
+
 # constructor tests
 #@test_throws MethodError PicoSAT.solve(1)
 @test_throws MethodError PicoSAT.solve([1, 1, Nothing])
@@ -55,3 +57,59 @@ test_gen() = begin
     end)
 end
 @test PicoSAT.solve(test_gen()) == [1,-2,-3,-4,5]
+
+#### itersolve tests ####
+function testsolution(clauses, sol)
+    vars = Array(Int, length(sol))
+    for i in sol
+        vars[abs(i)] = i > 0
+    end
+    for clause in clauses
+        nonetrue = true
+        for i in clause
+            if bool(vars[abs(i)] $ (i < 0))
+                nonetrue = false
+            end
+        end
+        nonetrue && return false
+    end
+    return true
+end
+
+# no clause
+for n = 0:10
+    @test length(collect(PicoSAT.itersolve([], vars=n))) == 2^n
+end
+
+# c1 iterables
+@test all([testsolution(clauses1, sol)
+    for sol in collect(PicoSAT.itersolve(clauses1))])
+
+@test all([testsolution(clauses1, sol)
+    for sol in collect(PicoSAT.itersolve(tuple(clauses1...)))])
+
+@test all([testsolution(clauses1, sol)
+    for sol in collect(PicoSAT.itersolve(test_gen()))])
+
+# test c1
+for sol in PicoSAT.itersolve(clauses1)
+    @test testsolution(clauses1, sol)
+end
+let sols = collect(PicoSAT.itersolve(clauses1, vars=nvars1))
+    @test length(sols) == 18
+    @test length(Set([tuple(sol...) for sol in sols])) == 18
+end
+
+# repeats should give the same answer
+let ref = Set([tuple(sol...) for sol in collect(PicoSAT.itersolve(clauses1))])
+    cnf = Any[]
+    for n = 1:50, c in clauses1
+        push!(cnf, deepcopy(c))
+    end
+    @test Set([tuple(sol...) for sol in collect(PicoSAT.itersolve(cnf))]) == ref
+end
+
+# c1 / c2 / c3 clauses
+@test collect(PicoSAT.itersolve(clauses1, proplimit=2)) == []
+@test collect(PicoSAT.itersolve(clauses2,vars=nvars2)) == []
+@test collect(PicoSAT.itersolve(clauses3, vars=3)) == Any[[-1, -2, -3], [-1, -2, 3]]
