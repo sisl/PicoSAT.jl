@@ -1,6 +1,6 @@
 module PicoSAT
 
-export solve, satisfiable
+export solve, itersolve, satisfiable
 
 @unix_only begin
     const libpicosat = Pkg.dir("PicoSAT", "deps", "libpicosat.so")
