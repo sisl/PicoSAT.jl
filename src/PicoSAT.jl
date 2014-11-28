@@ -181,10 +181,11 @@ end
 
 type PicoSolIterator
     ptr::PicoPtr
+    vars::Vector{Int}
 
     PicoSolIterator(p::PicoPtr) = begin
         @assert !isnull(p)
-        iter = new(p)
+        iter = new(p, Int[])
         finalizer(iter, i -> picosat_reset(i.ptr))
         return iter
     end
@@ -199,29 +200,30 @@ function itersolve(clauses;
 end
 
 # Add inverse of current solution to the clauses
-blocksol(p::PicoPtr) = begin
-    nvar = picosat_variables(p)
+blocksol(it::PicoSolIterator) = begin
+    nvar = picosat_variables(it.ptr)
     if nvar < 0
-        picosat_reset(p)
         throw(ErrorException("number of solution variables < 0"))
     end
-    sol = zeros(Int, nvar)
-    for i = 1:nvar
-        sol[i] = picosat_deref(p, i) > 0 ? 1 : -1
+    if length(it.vars) < nvar
+        resize!(it.vars, nvar)
     end
     for i = 1:nvar
-        picosat_add(p, sol[i] < 0 ? i : -i)
+        it.vars[i] = picosat_deref(it.ptr, i) > 0 ? 1 : -1
     end
-    picosat_add(p, 0)
+    for i = 1:nvar
+        picosat_add(it.ptr, it.vars[i] < 0 ? i : -i)
+    end
+    picosat_add(it.ptr, 0)
     return
 end
 
-next_solution(p::PicoPtr) = begin
-    res = picosat_sat(p, -1)
+next_solution(it::PicoSolIterator) = begin
+    res = picosat_sat(it.ptr, -1)
     if res == SATISFIABLE
-        result = get_solution(p)
+        result = get_solution(it.ptr)
         # add inverse sol for next iter
-        blocksol(p)
+        blocksol(it)
     elseif res == UNSATISFIABLE
         result = :unsatisfiable
     elseif res == UNKNOWN
@@ -235,13 +237,13 @@ end
 satisfiable(sol) = sol !== :unknown && sol !== :unsatisfiable
 
 Base.start(it::PicoSolIterator) = begin
-    sol = next_solution(it.ptr)
+    sol = next_solution(it)
     (sol, satisfiable(sol))
 end
 Base.done(it::PicoSolIterator, state) = state[2] == false
 
 Base.next(it::PicoSolIterator, state) = begin
-    sol = next_solution(it.ptr)
+    sol = next_solution(it)
     (state[1], (sol, satisfiable(sol)))
 end
 
