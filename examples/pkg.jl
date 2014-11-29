@@ -24,22 +24,23 @@ for (i,name) in enumerate(keys(index))
 end
 
 clauses = Any[]
+
 function tocnf(name)
+    # dependencies
     depends = get(index[name], :depends, Any[])
     for r in depends
         clause = Any[-(name2var[name])]
         append!(clause, Any[name2var[n] for n in split(r, '|')])
         push!(clauses, clause)
     end
+    # conflicts
     conflicts = get(index[name], :conflicts, Any[])
     for c in conflicts
         push!(clauses, Any[-(name2var[name]), -(name2var[c])])
     end
 end
 
-for name in keys(index)
-    tocnf(name)
-end
+map(tocnf, keys(index))
 
 println(name2var)
 push!(clauses, [name2var["a"]])

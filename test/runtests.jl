@@ -132,7 +132,7 @@ end
                         [-1, -4],
                         [ 1,  4]]) == :unsatisfiable
 
-@show PicoSAT.solve(Any[[ 1,  2,  3],
+@test PicoSAT.solve(Any[[ 1,  2,  3],
                         [ 1,  2, -3],
                         [ 1, -2,  3],
                         [ 1, -2, -3],
