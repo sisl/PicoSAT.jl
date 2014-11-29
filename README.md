@@ -14,7 +14,7 @@ The `PicoSAT` module exports two functions `solve` and `itersolve`.  Both functi
 Both methods take the following optional keyword arguments:
    - `vars` - the number of variables
    - `verbose` - prints solver logs to `STDOUT` when `verbose > 0` with increasing detail.
-   - `proplimit` - helps to bound the execution time.  The number of propations and the solution time are roughly linearly related.  A value of -1 (default) allows for an unbounded number of propagations.
+   - `proplimit` - helps to bound the execution time.  The number of propagations and the solution time are roughly linearly related.  A value of -1 (default) allows for an unbounded number of propagations.
 
 `solve(clauses; vars::Integer=-1, verbose::Integer=0, proplimit::Integer=0)`
  - Returns a solution if the problem is satisfiable.  Satisfiable solutions are represented as a vector of signed integers.  If the problem is not satisfiable the method returns an `:unsatisfiable` symbol.  If a solution cannot be found within the defined propagation limit, an `:unknown` symbol is returned.
