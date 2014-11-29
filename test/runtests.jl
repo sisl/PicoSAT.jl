@@ -106,9 +106,43 @@ let ref = Set([tuple(sol...) for sol in collect(PicoSAT.itersolve(clauses1))])
 end
 
 # c1 / c2 / c3 clauses
-@test collect(PicoSAT.itersolve(clauses1, proplimit=2)) == []
-@test collect(PicoSAT.itersolve(clauses2,vars=nvars2)) == []
+@test collect(PicoSAT.itersolve(clauses1, proplimit=2)) == Any[]
+@test collect(PicoSAT.itersolve(clauses2,vars=nvars2)) == Any[]
 @test collect(PicoSAT.itersolve(clauses3, vars=3)) == Any[[-1, -2, -3], [-1, -2, 3]]
+
+# Armin Biere, "Using High Performance SAT and QBF Solvers", presentation
+# given 2011-01-24, pp. 23-48,
+# http://fmv.jku.at/biere/talks/Biere-TPTPA11.pdf
+# From "DIMACS example 1"
+@test PicoSAT.solve(Any[[-2], [-1,-3], [1, 2], [2, 3]]) == :unsatisfiable
+
+# From "Satisfying Assignments Example 2"
+@test PicoSAT.solve(Any[[1,2], [-1,2], [-2,1]]) == [1,2]
+@test PicoSAT.solve(Any[[1,2], [-1,2], [-2,1], [-1]]) == :unsatisfiable
+@test PicoSAT.solve(Any[[1,2], [-1,2], [-2,1], [-2]]) == :unsatisfiable
+
+@test PicoSAT.solve(Any[[ 1,  2,  3],
+                        [ 1,  2, -3],
+                        [ 1, -2,  3],
+                        [ 1, -2, -3],
+                        [ 4,  5,  6],
+                        [ 4,  5, -6],
+                        [ 4, -5,  6],
+                        [ 4, -5, -6],
+                        [-1, -4],
+                        [ 1,  4]]) == :unsatisfiable
+
+@show PicoSAT.solve(Any[[ 1,  2,  3],
+                        [ 1,  2, -3],
+                        [ 1, -2,  3],
+                        [ 1, -2, -3],
+                        [ 4,  5,  6],
+                        [ 4,  5, -6],
+                        [ 4, -5,  6],
+                        [ 4, -5, -6],
+                        [-1, -4],
+                        [ 1,  4],
+                        [-1, -3]]) == :unsatisfiable
 
 # Test that we can run the examples
 read, write = redirect_stdout()
