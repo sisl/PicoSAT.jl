@@ -3,7 +3,7 @@ module PicoSAT
 export solve, itersolve
 
 @unix_only begin
-    const libpicosat = Pkg.dir("PicoSAT", "deps", "libpicosat.so")
+    const libpicosat = joinpath(dirname(@__FILE__), "..", "deps", "libpicosat.so")
 end
 @windows_only begin
     error("PicoSAT.jl does not currently work on Windows")
