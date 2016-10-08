@@ -1,6 +1,6 @@
-@unix_only begin
+@static if is_unix()
     run(`make libpicosat.so`)
 end
-@windows_only begin
+@static if is_windows()
     error("PicoSAT.jl does not currently work on Windows")
 end

@@ -2,10 +2,10 @@ module PicoSAT
 
 export solve, itersolve
 
-@unix_only begin
+@static if is_unix()
     const libpicosat = joinpath(dirname(@__FILE__), "..", "deps", "libpicosat.so")
 end
-@windows_only begin
+@static if is_windows()
     error("PicoSAT.jl does not currently work on Windows")
 end
 
@@ -40,7 +40,7 @@ picosat_measure_all_calls(p::PicoPtr) =
 # Set the prefix used for printing verbose messages and statistics.
 # (Default is "c ")
 
-picosat_set_prefix(p::PicoPtr, str::ByteString) =
+picosat_set_prefix(p::PicoPtr, str::String) =
     ccall((:picosat_set_prefix, libpicosat), Void, (PicoPtr,Ptr{Cchar}), p, str)
 
 # Set verbosity level
@@ -247,4 +247,5 @@ Base.next(it::PicoSolIterator, state) = begin
     (state[1], (sol, satisfiable(sol)))
 end
 
+Base.iteratorsize(it::PicoSolIterator) = Base.SizeUnknown()
 end # module

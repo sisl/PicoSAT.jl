@@ -63,7 +63,7 @@ function testsolution(clauses, sol)
     for clause in clauses
         nonetrue = true
         for i in clause
-            if bool(vars[abs(i)] $ (i < 0))
+            if Bool(vars[abs(i)] $ (i < 0))
                 nonetrue = false
             end
         end

@@ -3,17 +3,17 @@
 
 import PicoSAT
 
-index = {
-    "a" => {:depends => ["b", "c", "z"]},
-    "b" => {:depends => ["d"]},
-    "c" => {:depends => ["d|e", "f|g"]},
-    "d" => {:conflicts => ["e"]},
-    "e" => {:conflicts => ["d"]},
-    "f" => {:conflicts => ["g"]},
-    "g" => {:conflicts => ["f"]},
-    "y" => {:depends => ["z"]},
+index = Dict(
+    "a" => Dict(:depends => ["b", "c", "z"]),
+    "b" => Dict(:depends => ["d"]),
+    "c" => Dict(:depends => ["d|e", "f|g"]),
+    "d" => Dict(:conflicts => ["e"]),
+    "e" => Dict(:conflicts => ["d"]),
+    "f" => Dict(:conflicts => ["g"]),
+    "g" => Dict(:conflicts => ["f"]),
+    "y" => Dict(:depends => ["z"]),
     "z" => Dict{Any,Any}()
-}
+)
 
 name2var = Dict{Any,Any}()
 var2name = Dict{Any,Any}()
