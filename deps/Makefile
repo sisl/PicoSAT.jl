@@ -10,7 +10,7 @@ libpicosat.a: picosat.o
 	ar rc $@ picosat.o
 
 libpicosat.so: picosat.o
-	$(CC) $(CFLAGS) -shared -o $@ picosat.o #$(SONAME)
+	$(CC) $(CFLAGS) -O3 -shared -o $@ picosat.o #$(SONAME)
 
 clean:
 	rm -rf *.so *.o *.a
