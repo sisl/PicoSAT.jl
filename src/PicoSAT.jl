@@ -2,6 +2,8 @@ module PicoSAT
 
 export solve, itersolve
 
+import Base: convert, start, done, next, iteratorsize
+
 @static if is_unix()
     const libpicosat = joinpath(dirname(@__FILE__), "..", "deps", "libpicosat.so")
 end
@@ -16,7 +18,7 @@ const UNSATISFIABLE = 20
 immutable PicoPtr
     ptr::Ptr{Void}
 end
-Base.convert(::Type{Ptr{Void}}, p::PicoPtr) = p.ptr
+convert(::Type{Ptr{Void}}, p::PicoPtr) = p.ptr
 
 version()   = bytestring(ccall((:picosat_version, libpicosat), Ptr{Cchar}, ()))
 config()    = bytestring(ccall((:picosat_config,  libpicosat), Ptr{Cchar}, ()))
@@ -182,7 +184,7 @@ type PicoSolIterator
     ptr::PicoPtr
     vars::Vector{Int}
 
-    PicoSolIterator(p::PicoPtr) = begin
+    function PicoSolIterator(p::PicoPtr)
         @assert p.ptr !== C_NULL
         iter = new(p, Int[])
         finalizer(iter, i -> picosat_reset(i.ptr))
@@ -235,16 +237,16 @@ end
 
 satisfiable(sol) = sol !== :unknown && sol !== :unsatisfiable
 
-Base.start(it::PicoSolIterator) = begin
+function start(it::PicoSolIterator)
     sol = next_solution(it)
     (sol, satisfiable(sol))
 end
-Base.done(it::PicoSolIterator, state) = state[2] == false
+done(it::PicoSolIterator, state) = state[2] == false
 
-Base.next(it::PicoSolIterator, state) = begin
+function next(it::PicoSolIterator, state)
     sol = next_solution(it)
     (state[1], (sol, satisfiable(sol)))
 end
 
-Base.iteratorsize(it::PicoSolIterator) = Base.SizeUnknown()
+iteratorsize(it::PicoSolIterator) = Base.SizeUnknown()
 end # module
