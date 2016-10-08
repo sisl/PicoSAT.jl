@@ -30,70 +30,80 @@ picosat_init() = ccall((:picosat_init, libpicosat), PicoPtr, ())
 # destructor
 picosat_reset(p::PicoPtr) = ccall((:picosat_reset, libpicosat), Void, (PicoPtr,), p)
 
-# Measure all time spent in all calls in the solver.  By default only the
-# time spent in 'picosat_sat' is measured.  Enabling this function might
-# for instance triple the time needed to add large CNFs, since every call
-# to 'picosat_add' will trigger a call to 'getrusage'.
-
+"""
+Measure all time spent in all calls in the solver.  By default only the
+time spent in 'picosat_sat' is measured.  Enabling this function might
+for instance triple the time needed to add large CNFs, since every call
+to 'picosat_add' will trigger a call to 'getrusage'.
+"""
 picosat_measure_all_calls(p::PicoPtr) =
     ccall((:picosat_measure_all_calls, libpicosat), Void, (PicoPtr,), p)
 
-# Set the prefix used for printing verbose messages and statistics.
-# (Default is "c ")
-
+"""
+Set the prefix used for printing verbose messages and statistics.
+(Default is "c ")
+"""
 picosat_set_prefix(p::PicoPtr, str::String) =
     ccall((:picosat_set_prefix, libpicosat), Void, (PicoPtr,Ptr{Cchar}), p, str)
 
-# Set verbosity level
-# A verbosity level >= 1 prints more and more detailed progress reports to the output file.
-# Verbose messages are prefixed with the string set by 'picosat_set_prefix'
-
+"""
+Set verbosity level
+A verbosity level >= 1 prints more and more detailed progress reports to the output file.
+Verbose messages are prefixed with the string set by 'picosat_set_prefix'
+"""
 picosat_set_verbosity(p::PicoPtr, level::Integer) =
     ccall((:picosat_set_verbosity, libpicosat), Void, (PicoPtr,Cint), p, level)
 
-# Disable (set_plain == true) / Enable all prerocessing.
-
+"""
+Disable (set_plain == true) / Enable all prerocessing.
+"""
 picosat_set_plain(v::Bool) =
     ccall((:picosat_set_plain, libpicosat), Void, (PicoPtr,Cint), v ? 1 : 0)
 
-# If you know a good estimate on how many variables you are going to use
-# then calling this function before adding literals will result in less
-# resizing of the variable table.  But this is just a minor optimization.
-# Beside exactly allocating enough variables it has the same effect as
-# calling 'picosat_inc_max_var'.
-
+"""
+If you know a good estimate on how many variables you are going to use
+then calling this function before adding literals will result in less
+resizing of the variable table.  But this is just a minor optimization.
+Beside exactly allocating enough variables it has the same effect as
+calling 'picosat_inc_max_var'.
+"""
 picosat_adjust(p::PicoPtr, max_idx::Integer) =
     ccall((:picosat_adjust, libpicosat), Void, (PicoPtr,Cint), p, max_idx)
 
-# As alternative to a decision limit you can use the number of propagations as limit.
-# This is more linearly related to execution time. This has to
-# be called after 'picosat_init' and before 'picosat_sat'.
-
+"""
+As alternative to a decision limit you can use the number of propagations as limit.
+This is more linearly related to execution time. This has to
+be called after 'picosat_init' and before 'picosat_sat'.
+"""
 picosat_set_propagation_limit(p::PicoPtr, limit::Integer) =
     ccall((:picosat_set_propagation_limit, libpicosat), Void, (PicoPtr,Culonglong), p, limit)
 
-# Add a literal of the next clause.  A zero terminates the clause.  The
-# solver is incremental.  Adding a new literal will reset the previous
-# assignment.   The return value is the original clause index to which
-# this literal respectively the trailing zero belong starting at 0.
-
+"""
+Add a literal of the next clause.  A zero terminates the clause.  The
+solver is incremental.  Adding a new literal will reset the previous
+assignment.   The return value is the original clause index to which
+this literal respectively the trailing zero belong starting at 0.
+"""
 picosat_add(p::PicoPtr, lit::Integer) =
     ccall((:picosat_add, libpicosat), Cint, (PicoPtr,Cint), p, lit)
 
-# Call the main SAT solver.
-# A negative decision limit sets no limit on the number of decisions.
+"""
+Call the main SAT solver.
+A negative decision limit sets no limit on the number of decisions.
+"""
 picosat_sat(p::PicoPtr, limit::Integer) =
     ccall((:picosat_sat, libpicosat), Cint, (PicoPtr,Cint), p, limit)
 
-# p cnf <m> n
+"""p cnf <m> n"""
 picosat_variables(p::PicoPtr) =
     ccall((:picosat_variables, libpicosat), Cint, (PicoPtr,), p)
 
-# After 'picosat_sat' was called and returned 'PICOSAT_SATISFIABLE', then
-# the satisfying assignment can be obtained by 'dereferencing' literals.
-# The value of the literal is return as '1' for 'true',  '-1' for 'false'
-# and '0' for an unknown value.
-
+"""
+After 'picosat_sat' was called and returned 'PICOSAT_SATISFIABLE', then
+the satisfying assignment can be obtained by 'dereferencing' literals.
+The value of the literal is return as '1' for 'true',  '-1' for 'false'
+and '0' for an unknown value.
+"""
 picosat_deref(p::PicoPtr, lit::Integer) =
     ccall((:picosat_deref, libpicosat), Cint, (PicoPtr,Cint), p, lit)
 
@@ -158,8 +168,28 @@ function get_solution(p::PicoPtr)
     end
     return sol
 end
+"""
+`solve(clauses; vars::Integer=-1, verbose::Integer=0, proplimit::Integer=0)`
+   - `vars` - the number of variables
+   - `verbose` - prints solver logs to `STDOUT` when `verbose > 0` with increasing detail.
+   - `proplimit` - helps to bound the execution time.  The number of propagations and the solution time are roughly linearly related.  A value of 0 (default) allows for an unbounded number of propagations.
 
-# Solve the SAT problem for provided clauses
+Returns a solution if the problem is satisfiable.
+Satisfiable solutions are represented as a vector of signed integers.
+If the problem is not satisfiable the method returns an `:unsatisfiable` symbol.
+If a solution cannot be found within the defined propagation limit, an `:unknown` symbol is returned.
+```julia
+julia> import PicoSAT
+julia> cnf = Any[[1, -5, 4], [-1, 5, 3, 4], [-3, -4]];
+julia> PicoSAT.solve(cnf)
+5-element Array{Int64,1}:
+   1
+  -2
+  -3
+  -4
+   5
+```
+"""
 function solve(clauses;
                vars::Integer=-1,
                verbose::Integer=0,
@@ -191,7 +221,30 @@ type PicoSolIterator
         return iter
     end
 end
+"""
+`itersolve(clauses; vars::Integer=-1, verbose::Integer=0, proplimit::Integer=0)`
+   - `vars` - the number of variables
+   - `verbose` - prints solver logs to `STDOUT` when `verbose > 0` with increasing detail.
+   - `proplimit` - helps to bound the execution time.  The number of propagations and the solution time are roughly linearly related.  A value of 0 (default) allows for an unbounded number of propagations.
 
+
+Returns an iterable object over all solutions.
+When a user-defined propagation limit is specified, the iterator may not produce all feasible solutions.
+
+```julia
+julia> import PicoSAT
+julia> cnf = Any[[1, -5, 4], [-1, 5, 3, 4], [-3, -4]];
+julia> PicoSAT.itersolve(cnf)
+julia> for sol in PicoSAT.itersolve(cnf)
+           println(sol)
+       end
+[1,-2,-3,-4,5]
+[1,-2,-3,4,-5]
+[1,-2,-3,4,5]
+[1,-2,3,-4,-5]
+...
+```
+"""
 function itersolve(clauses;
                    vars::Integer=-1,
                    verbose::Integer=0,

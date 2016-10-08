@@ -35,7 +35,7 @@ julia> PicoSAT.solve(cnf)
 The absolute values of the solution vector represent the ith variable.  The sign of the ith variable represents the boolean values `true` (+) and `false` (-).
 
 
-`itersolve vars::Integer=-1, verbose::Integer=0, proplimit::Integer=0)`
+`itersolve(clauses; vars::Integer=-1, verbose::Integer=0, proplimit::Integer=0)`
   - Returns an iterable object over all solutions.  When a user-defined propagation limit is specified, the iterator may not produce all feasible solutions.
 
 
