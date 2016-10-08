@@ -6,7 +6,7 @@ export solve, itersolve
     const libpicosat = joinpath(dirname(@__FILE__), "..", "deps", "libpicosat.so")
 end
 @static if is_windows()
-    error("PicoSAT.jl does not currently work on Windows")
+    throw(ErrorException("PicoSAT.jl does not currently work on Windows"))
 end
 
 const UNKNOWN = 0
@@ -17,7 +17,6 @@ immutable PicoPtr
     ptr::Ptr{Void}
 end
 Base.convert(::Type{Ptr{Void}}, p::PicoPtr) = p.ptr
-isnull(p::PicoPtr) = p.ptr == C_NULL
 
 version()   = bytestring(ccall((:picosat_version, libpicosat), Ptr{Cchar}, ()))
 config()    = bytestring(ccall((:picosat_config,  libpicosat), Ptr{Cchar}, ()))
@@ -99,7 +98,7 @@ picosat_deref(p::PicoPtr, lit::Integer) =
 function add_clause(p::PicoPtr, clause)
     for lit in clause
         v = convert(Cint, lit)
-        v == 0 && throw(ErrorException("non zero integer expected"))
+        v == 0 && throw(ErrorException("PicoSAT Error: non zero integer expected"))
         picosat_add(p, v)
     end
     picosat_add(p, 0)
@@ -115,9 +114,9 @@ end
 
 function picosat_setup(clauses, vars::Integer, verbose::Integer, proplimit::Integer)
     p = picosat_init()
-    if isnull(p)
+    if p.ptr === C_NULL
         picosat_reset(p)
-        throw(ErrorException("failed to initialize PicoSAT library"))
+        throw(ErrorException("PicoSAT Error: failed to initialize PicoSAT library"))
     end
     if verbose < 0
         picosat_reset(p)
@@ -173,7 +172,7 @@ function solve(clauses;
         result = :unknown
     else
         picosat_reset(p)
-        throw(ErrorException("PicoSAT Errror: return value $res"))
+        throw(ErrorException("PicoSAT Error: return value $res"))
     end
     picosat_reset(p)
     return result
@@ -184,7 +183,7 @@ type PicoSolIterator
     vars::Vector{Int}
 
     PicoSolIterator(p::PicoPtr) = begin
-        @assert !isnull(p)
+        @assert p.ptr !== C_NULL
         iter = new(p, Int[])
         finalizer(iter, i -> picosat_reset(i.ptr))
         return iter
@@ -203,7 +202,7 @@ end
 function blocksol(it::PicoSolIterator)
     nvar = picosat_variables(it.ptr)
     if nvar < 0
-        throw(ErrorException("number of solution variables < 0"))
+        throw(ErrorException("PicoSAT Error: number of solution variables < 0"))
     end
     if length(it.vars) < nvar
         resize!(it.vars, nvar)
