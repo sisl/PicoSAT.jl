@@ -58,3 +58,4 @@ julia> for sol in PicoSAT.itersolve(cnf)
 
 ### Contributors
   * Jake Bolewski - [@jakebolewski](http://github.com/jakebolewski)
+  * Carlo Lucibello - [@CarloLucibello](https://github.com/CarloLucibello)
