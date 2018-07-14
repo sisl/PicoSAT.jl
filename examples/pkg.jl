@@ -40,7 +40,7 @@ function tocnf(name)
     end
 end
 
-map(tocnf, keys(index))
+foreach(tocnf, keys(index))
 
 println(name2var)
 push!(clauses, [name2var["a"]])

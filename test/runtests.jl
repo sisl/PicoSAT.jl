@@ -1,5 +1,5 @@
 using PicoSAT
-using Base.Test
+using Test
 
 # test clauses
 # p cnf 5 3
@@ -47,23 +47,31 @@ end
 # c1 iterables
 @test PicoSAT.solve(tuple(clauses1...)) == [1, -2, -3, -4, 5]
 
-test_gen() = begin
-    return (@task for c in clauses1
-        produce(c)
-    end)
+function test_gen()
+    Channel() do channel
+        for c in clauses1
+            put!(channel, c)
+        end
+    end
 end
+
+# test_gen() = begin
+#     return (@task for c in clauses1
+#         produce(c)
+#     end)
+# end
 @test PicoSAT.solve(test_gen()) == [1,-2,-3,-4,5]
 
 #### itersolve tests ####
 function testsolution(clauses, sol)
-    vars = Array(Int, length(sol))
+    vars = Array{Int}(undef, length(sol))
     for i in sol
         vars[abs(i)] = i > 0
     end
     for clause in clauses
         nonetrue = true
         for i in clause
-            if Bool(vars[abs(i)] $ (i < 0))
+            if Bool(vars[abs(i)] ⊻ (i < 0))
                 nonetrue = false
             end
         end

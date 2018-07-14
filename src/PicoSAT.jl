@@ -2,12 +2,12 @@ module PicoSAT
 
 export solve, itersolve
 
-import Base: convert, start, done, next, iteratorsize
+import Base: convert, iterate, IteratorSize
 
-@static if is_unix()
+@static if Sys.isunix()
     const libpicosat = joinpath(dirname(@__FILE__), "..", "deps", "libpicosat.so")
 end
-@static if is_windows()
+@static if Sys.iswindows()
     throw(ErrorException("PicoSAT.jl does not currently work on Windows"))
 end
 
@@ -15,10 +15,10 @@ const UNKNOWN = 0
 const SATISFIABLE = 10
 const UNSATISFIABLE = 20
 
-immutable PicoPtr
-    ptr::Ptr{Void}
+struct PicoPtr
+    ptr::Ptr{Cvoid}
 end
-convert(::Type{Ptr{Void}}, p::PicoPtr) = p.ptr
+convert(::Type{Ptr{Cvoid}}, p::PicoPtr) = p.ptr
 
 version()   = bytestring(ccall((:picosat_version, libpicosat), Ptr{Cchar}, ()))
 config()    = bytestring(ccall((:picosat_config,  libpicosat), Ptr{Cchar}, ()))
@@ -28,7 +28,7 @@ copyright() = bytestring(ccall((:picosat_copyright, libpicosat), Ptr{Cchar}, ())
 picosat_init() = ccall((:picosat_init, libpicosat), PicoPtr, ())
 
 # destructor
-picosat_reset(p::PicoPtr) = ccall((:picosat_reset, libpicosat), Void, (PicoPtr,), p)
+picosat_reset(p::PicoPtr) = ccall((:picosat_reset, libpicosat), Cvoid, (PicoPtr,), p)
 
 """
 Measure all time spent in all calls in the solver.  By default only the
@@ -37,14 +37,14 @@ for instance triple the time needed to add large CNFs, since every call
 to 'picosat_add' will trigger a call to 'getrusage'.
 """
 picosat_measure_all_calls(p::PicoPtr) =
-    ccall((:picosat_measure_all_calls, libpicosat), Void, (PicoPtr,), p)
+    ccall((:picosat_measure_all_calls, libpicosat), Cvoid, (PicoPtr,), p)
 
 """
 Set the prefix used for printing verbose messages and statistics.
 (Default is "c ")
 """
 picosat_set_prefix(p::PicoPtr, str::String) =
-    ccall((:picosat_set_prefix, libpicosat), Void, (PicoPtr,Ptr{Cchar}), p, str)
+    ccall((:picosat_set_prefix, libpicosat), Cvoid, (PicoPtr,Ptr{Cchar}), p, str)
 
 """
 Set verbosity level
@@ -52,13 +52,13 @@ A verbosity level >= 1 prints more and more detailed progress reports to the out
 Verbose messages are prefixed with the string set by 'picosat_set_prefix'
 """
 picosat_set_verbosity(p::PicoPtr, level::Integer) =
-    ccall((:picosat_set_verbosity, libpicosat), Void, (PicoPtr,Cint), p, level)
+    ccall((:picosat_set_verbosity, libpicosat), Cvoid, (PicoPtr,Cint), p, level)
 
 """
 Disable (set_plain == true) / Enable all prerocessing.
 """
-picosat_set_plain(v::Bool) =
-    ccall((:picosat_set_plain, libpicosat), Void, (PicoPtr,Cint), v ? 1 : 0)
+picosat_set_plain(p::PicoPtr, v::Bool) =
+    ccall((:picosat_set_plain, libpicosat), Cvoid, (PicoPtr,Cint), p, v ? 1 : 0)
 
 """
 If you know a good estimate on how many variables you are going to use
@@ -68,7 +68,7 @@ Beside exactly allocating enough variables it has the same effect as
 calling 'picosat_inc_max_var'.
 """
 picosat_adjust(p::PicoPtr, max_idx::Integer) =
-    ccall((:picosat_adjust, libpicosat), Void, (PicoPtr,Cint), p, max_idx)
+    ccall((:picosat_adjust, libpicosat), Cvoid, (PicoPtr,Cint), p, max_idx)
 
 """
 As alternative to a decision limit you can use the number of propagations as limit.
@@ -76,7 +76,7 @@ This is more linearly related to execution time. This has to
 be called after 'picosat_init' and before 'picosat_sat'.
 """
 picosat_set_propagation_limit(p::PicoPtr, limit::Integer) =
-    ccall((:picosat_set_propagation_limit, libpicosat), Void, (PicoPtr,Culonglong), p, limit)
+    ccall((:picosat_set_propagation_limit, libpicosat), Cvoid, (PicoPtr,Culonglong), p, limit)
 
 """
 Add a literal of the next clause.  A zero terminates the clause.  The
@@ -163,7 +163,7 @@ function get_solution(p::PicoPtr)
     sol = zeros(Int, nvar)
     for i = 1:nvar
         v = picosat_deref(p, i)
-        assert(v == 1 || v == -1)
+        @assert(v == 1 || v == -1)
         sol[i] = v * i
     end
     return sol
@@ -210,14 +210,14 @@ function solve(clauses;
     return result
 end
 
-type PicoSolIterator
+mutable struct PicoSolIterator
     ptr::PicoPtr
     vars::Vector{Int}
 
     function PicoSolIterator(p::PicoPtr)
         @assert p.ptr !== C_NULL
         iter = new(p, Int[])
-        finalizer(iter, i -> picosat_reset(i.ptr))
+        finalizer(i -> picosat_reset(i.ptr), iter)
         return iter
     end
 end
@@ -290,16 +290,14 @@ end
 
 satisfiable(sol) = sol !== :unknown && sol !== :unsatisfiable
 
-function start(it::PicoSolIterator)
+function Base.iterate(it::PicoSolIterator, state=nothing)
     sol = next_solution(it)
-    (sol, satisfiable(sol))
-end
-done(it::PicoSolIterator, state) = state[2] == false
-
-function next(it::PicoSolIterator, state)
-    sol = next_solution(it)
-    (state[1], (sol, satisfiable(sol)))
+    if satisfiable(sol)
+        return (sol, nothing)
+    else
+        return nothing
+    end
 end
 
-iteratorsize(it::PicoSolIterator) = Base.SizeUnknown()
+IteratorSize(it::PicoSolIterator) = Base.SizeUnknown()
 end # module
