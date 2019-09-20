@@ -4,11 +4,12 @@ export solve, itersolve
 
 import Base: convert, iterate, IteratorSize
 
-@static if Sys.isunix()
-    const libpicosat = joinpath(dirname(@__FILE__), "..", "deps", "libpicosat.so")
-end
-@static if Sys.iswindows()
-    throw(ErrorException("PicoSAT.jl does not currently work on Windows"))
+const depfile = joinpath(@__DIR__, "..", "deps", "deps.jl")
+
+if isfile(depfile)
+    include(depfile)
+else
+    error("PicoSAT not properly installed. Please run Pkg.build(\"PicoSAT\")")
 end
 
 const UNKNOWN = 0
