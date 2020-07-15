@@ -1,7 +1,7 @@
 # PicoSAT.jl
 
-[![Build Status](https://travis-ci.org/jakebolewski/PicoSAT.jl.svg?branch=master)](https://travis-ci.org/jakebolewski/PicoSAT.jl)
-[![Coverage Status](https://img.shields.io/coveralls/jakebolewski/PicoSAT.jl.svg)](https://coveralls.io/r/jakebolewski/PicoSAT.jl)
+[![Build Status](https://travis-ci.org/sisl/PicoSAT.jl.svg?branch=master)](https://travis-ci.org/sisl/PicoSAT.jl)
+[![Coverage Status](https://img.shields.io/coveralls/sisl/PicoSAT.jl.svg)](https://coveralls.io/r/sisl/PicoSAT.jl)
 
 PicoSAT.jl provides [Julia](www.julialang.org) bindings to the popular [SAT](http://en.wikipedia.org/wiki/Boolean_satisfiability_problem) solver [picosat](http://fmv.jku.at/picosat/) by Armin Biere.  It is based off the Python [pycosat](https://github.com/ContinuumIO/pycosat) and Go [pigosat](https://github.com/wkschwartz/pigosat) bindings written by Ilan Schnell and Willam Schwartz.
 
