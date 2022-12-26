@@ -1,16 +1,10 @@
 module PicoSAT
 
+using PicoSAT_jll
+
 export solve, itersolve
 
 import Base: convert, iterate, IteratorSize
-
-const depfile = joinpath(@__DIR__, "..", "deps", "deps.jl")
-
-if isfile(depfile)
-    include(depfile)
-else
-    error("PicoSAT not properly installed. Please run Pkg.build(\"PicoSAT\")")
-end
 
 const UNKNOWN = 0
 const SATISFIABLE = 10
