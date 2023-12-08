@@ -294,5 +294,6 @@ function Base.iterate(it::PicoSolIterator, state=nothing)
     end
 end
 
-IteratorSize(it::PicoSolIterator) = Base.SizeUnknown()
+IteratorSize(::Type{PicoSolIterator}) = Base.SizeUnknown()
+
 end # module
