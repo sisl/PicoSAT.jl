@@ -119,6 +119,10 @@ using Test
     @test collect(PicoSAT.itersolve(clauses2,vars=nvars2)) == Any[]
     @test collect(PicoSAT.itersolve(clauses3, vars=3)) == Any[[-1, -2, -3], [-1, -2, 3]]
 
+    # iterator interface
+    @test map(identity, Iterators.map(identity, PicoSAT.itersolve(clauses1))) ==
+        collect(PicoSAT.itersolve(clauses1))
+
     # Armin Biere, "Using High Performance SAT and QBF Solvers", presentation
     # given 2011-01-24, pp. 23-48,
     # http://fmv.jku.at/biere/talks/Biere-TPTPA11.pdf
