@@ -1,13 +1,13 @@
 # PicoSAT.jl
 
-[![Build Status](https://travis-ci.org/sisl/PicoSAT.jl.svg?branch=master)](https://travis-ci.org/sisl/PicoSAT.jl)
-[![Coverage Status](https://img.shields.io/coveralls/sisl/PicoSAT.jl.svg)](https://coveralls.io/r/sisl/PicoSAT.jl)
+[![Build Status](https://github.com/sisl/PicoSAT.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/sisl/PicoSAT.jl/actions/workflows/CI.yml)
+[![Coverage Status](https://coveralls.io/repos/sisl/PicoSAT.jl/badge.svg)](https://coveralls.io/r/sisl/PicoSAT.jl)
 
 PicoSAT.jl provides [Julia](www.julialang.org) bindings to the popular [SAT](http://en.wikipedia.org/wiki/Boolean_satisfiability_problem) solver [picosat](http://fmv.jku.at/picosat/) by Armin Biere.  It is based off the Python [pycosat](https://github.com/ContinuumIO/pycosat) and Go [pigosat](https://github.com/wkschwartz/pigosat) bindings written by Ilan Schnell and Willam Schwartz.
 
 ## Installation
 
-To install, run `Pkg.add("PicoSAT")` in Julia.  The entire picosat library (v960) is shipped with the package to make building the library easier.  Windows builds are currently not supported at the moment.
+To install, run `Pkg.add("PicoSAT")` in Julia.  The entire picosat library (v960) is shipped with the package to make building the library easier.  *Windows builds are currently not supported at the moment.*
 
 # Usage
 The `PicoSAT` module exports two functions `solve` and `itersolve`.  Both functions take an iterable of clauses as a required argument.  Each clause is represented as an iterable of non-zero integers.
