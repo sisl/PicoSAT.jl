@@ -1,7 +1,7 @@
 name = "PicoSAT"
 uuid = "ff2beb65-d7cd-5ff1-a187-74671133a339"
 repo = "https://github.com/jakebolewski/PicoSAT.jl.git"
-version = "0.4.0"
+version = "0.4.1"
 
 [deps]
 PicoSAT_jll = "e78fa76d-a187-569f-aede-ad11521a2edf"
